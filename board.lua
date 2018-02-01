@@ -115,7 +115,6 @@ function Board:getValidMoves(piece)
 end
 
 local function move(event)
-    x = 0; y = 0
     local p = event.target
     if (event.phase == "began") then
         isDraggedAllowed = true
@@ -124,6 +123,7 @@ local function move(event)
         saveY = p.y
         moves = Board:getValidMoves(p)
     elseif (event.phase == "moved" and isDraggedAllowed) then
+        haveDragged = true
         print(p.x,' ', p.y)
         p:toFront()
         setPosition(p, event.x, event.y)
@@ -139,7 +139,7 @@ local function move(event)
         if (p.y < 0) then
             p.y = 0
         end
-    elseif (event.phase == "ended") then
+    elseif (event.phase == "ended" and haveDragged) then
         if (saveX == nil and saveY == nil) then
             saveX = 0; saveY = 0
         end
@@ -152,6 +152,7 @@ local function move(event)
             setPosition(p, sx, sy)
         end
         isDraggedAllowed = false
+        haveDragged = false
         display.getCurrentStage():setFocus(event.target, nil)
     end
     return true
