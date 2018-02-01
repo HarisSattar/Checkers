@@ -12,6 +12,7 @@ function Piece:new(s, p)
     piece.side = s
     piece.x = p.x
     piece.y = p.y
+    piece.isKing = false
 
     return piece
 end

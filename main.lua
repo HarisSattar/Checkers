@@ -22,4 +22,4 @@ local scale = 180
 require("board")
 board = Board:new(topLeftX, topLeftY, scale)
 
-board:makeMove("black")
+board:nextTurn("white")

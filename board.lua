@@ -28,6 +28,10 @@ function Board:new(topLeftX, topLeftY, scale)
     return board
 end
 
+local function positionToIndex(x, y)
+    return math.floor(x / (display.contentWidth / 8)) + 1, math.floor(y / (display.contentWidth / 8)) - 2
+end
+
 local function positionToCell(x, y, sx, sy)
     local x = math.floor(x / (display.contentWidth / 8))
     local y = math.floor(y / (display.contentWidth / 8))
@@ -44,9 +48,14 @@ local function setPosition(p, x, y)
     p.y = y
 end
 
-local function checkNewPositionMoved(x, y, sx, sy)
+function Board:checkNewPositionMoved(x, y, sx, sy)
     local x, y = positionToCell(x, y)
     local sx, sy = positionToCell(sx, sy)
+    local i, j = positionToIndex(x, y)
+
+    if (board[i][j] ~= nil) then
+        return false
+    end
     if (sx == x and sy == y) then
         return false
     end
@@ -55,28 +64,126 @@ end
 
 local turn
 
-local function move(event)
-    p = event.target
-    if (event.phase == "began") then
-        saveX = event.x
-        saveY = event.y
+local function checkDarkCell(x, y)
+    local x, y = positionToIndex(x, y)
+    if (x % 2 == 0 and y % 2 ~= 0) then
+        return true
     end
-    if ( event.phase == "moved") then
+    if (x % 2 ~= 0 and y % 2 == 0) then
+        return true
+    end
+    return false
+end 
+
+function Board:getValidMoves(piece) 
+    local moves = {}
+    local side = piece.side
+    local i, j = positionToIndex(piece.x, piece.y)
+    if (side == "white" and not piece.isKing) then
+        print("white not king", i, j)
+        if (i < 8 and j > 1 and board[i+1][j-1] == nil) then
+            indices = {x = i+1, y = j-1}
+            table.insert(moves, indices)
+        elseif (i < 7 and j > 2 and board[i+1][j-1].side == "black" and board[i+2][j-2] == nil) then
+            indices = {x = i+2, y = j-2}
+            table.insert(moves, indices)
+        end
+        if (i > 1 and j > 1 and board[i-1][j-1] == nil) then
+            indices = {x = i-1, y = j-1}
+            table.insert(moves, indices)
+        elseif (i > 2 and j > 2 and board[i-1][j-1].side == "black" and board[i-2][j-2] == nil) then
+            indices = {x = i-2, y = j-2}
+            table.insert(moves, indices)
+        end
+        print(#moves)
+        -- print(moves[1].x, moves[1].y)
+    end
+    if (side == "black" and not piece.isKing) then
+        print("black not king", i, j)
+        if (i < 8 and j < 8 and board[i+1][j+1] == nil) then
+            indices = {x = i+1, y = j-1}
+            table.insert(moves, indices)
+        end
+        if (i > 1 and j < 8 and board[i-1][j+1] == nil) then
+            indices = {x = i-1, y = j-1}
+            table.insert(moves, indices)
+        end
+        print(#moves)
+        -- print(moves[1].x, moves[1].y)
+    end
+    return moves
+end
+
+local function move(event)
+    local p = event.target
+    if (event.phase == "began") then
+        display.getCurrentStage():setFocus( event.target, event.id )
+        saveX = p.x
+        saveY = p.y
+        moves = Board:getValidMoves(p)
+    elseif ( event.phase == "moved") then
+        print(p.x,' ', p.y)
         p:toFront()
         setPosition(p, event.x, event.y)
-    end
-    if (event.phase == "ended") then
-        local x, y = positionToCell(event.x, event.y, saveX, saveY)
-        setPosition(p, x, y)
-        if checkNewPositionMoved(x, y, saveX, saveY) then
-            Board:makeMove(turn)
+        if (p.x > display.contentWidth) then
+            p.x = display.contentWidth
         end
+        if (p.x < 0) then
+            p.x = 0
+        end
+        if (p.y > display.contentHeight) then
+            p.y = display.contentHeight
+        end
+        if (p.y < 0) then
+            p.y = 0
+        end
+    elseif (event.phase == "ended") then
+        local x, y = positionToCell(event.x, event.y, saveX, saveY)
+        if Board:checkIfValidMove(x, y, saveX, saveY, moves) then
+            Board:updateBoard(p, x, y, saveX, saveY)
+            Board:nextTurn(turn)
+        else
+            local sx, sy = positionToCell(saveX, saveY)
+            setPosition(p, sx, sy)
+        end
+        display.getCurrentStage():setFocus(event.target, nil)
     end
     return true
 end
 
-function Board:makeMove(side)
-    print("ran makeMove")
+function Board:checkIfValidMove(x, y, sx, sy, moves)
+    return Board:checkNewPositionMoved(x, y, sx, sy) and checkDarkCell(x, y) and #moves > 0
+end
+
+function Board:updateBoard(piece, x, y, sx, sy)
+    print("board updated")
+    i, j = positionToIndex(x, y)
+    oldI, oldJ = positionToIndex(sx, sy)
+
+    board[i][j] = piece
+    board[oldI][oldJ] = nil
+    setPosition(piece, x, y)
+    if (piece.side == "white" and j == 1) then
+        piece:removeSelf()
+        piece = display.newImageRect("imgs/white_k.png", 200, 200)
+        board[i][j] = piece
+        setPosition(piece, x, y)
+        piece.side = "white"
+        piece.isKing = true
+    end
+    if (piece.side == "black" and j == 8) then
+        piece:removeSelf()
+        piece = display.newImageRect("imgs/black_k.png", 200, 200)
+        board[i][j] = piece
+        setPosition(piece, x, y)
+        piece.side = "black"
+        piece.isKing = true
+    end
+
+    print(i,j,board[i][j].side, board[i][j].isKing)
+end
+
+function Board:nextTurn(side)
     turn = side
     for i = 1, 8 do
         for j = 1, 8 do
