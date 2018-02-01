@@ -32,11 +32,11 @@ local function positionToIndex(x, y)
     return math.floor(x / (display.contentWidth / 8)) + 1, math.floor(y / (display.contentWidth / 8)) - 2
 end
 
-local function positionToCell(x, y, sx, sy)
+local function positionToCell(x, y)
     local x = math.floor(x / (display.contentWidth / 8))
     local y = math.floor(y / (display.contentWidth / 8))
     if (y < 3 or x < 0 or x > 7 or y > 10) then
-        return positionToCell(sx, sy, 0, 0)
+        return positionToCell(sx, sy)
     end
     x = x * display.contentWidth / 8 + 90
     y = y * display.contentWidth / 8 + 110
@@ -115,13 +115,15 @@ function Board:getValidMoves(piece)
 end
 
 local function move(event)
+    x = 0; y = 0
     local p = event.target
     if (event.phase == "began") then
+        isDraggedAllowed = true
         display.getCurrentStage():setFocus( event.target, event.id )
         saveX = p.x
         saveY = p.y
         moves = Board:getValidMoves(p)
-    elseif ( event.phase == "moved") then
+    elseif (event.phase == "moved" and isDraggedAllowed) then
         print(p.x,' ', p.y)
         p:toFront()
         setPosition(p, event.x, event.y)
@@ -138,6 +140,9 @@ local function move(event)
             p.y = 0
         end
     elseif (event.phase == "ended") then
+        if (saveX == nil and saveY == nil) then
+            saveX = 0; saveY = 0
+        end
         local x, y = positionToCell(event.x, event.y, saveX, saveY)
         if Board:checkIfValidMove(x, y, saveX, saveY, moves) then
             Board:updateBoard(p, x, y, saveX, saveY)
@@ -146,6 +151,7 @@ local function move(event)
             local sx, sy = positionToCell(saveX, saveY)
             setPosition(p, sx, sy)
         end
+        isDraggedAllowed = false
         display.getCurrentStage():setFocus(event.target, nil)
     end
     return true
