@@ -146,14 +146,12 @@ function Board:getValidMoves(piece)
         if (i < 8 and j > 1 and board[i+1][j-1] == nil) then
             indices = {x = i+1, y = j-1}
             table.insert(moves, indices)
-        elseif (i < 7 and j > 2 and board[i+1][j-1].side == "white" and board[i+2][j-2] == nil) then
             indices = {x = i+2, y = j-2}
             table.insert(moves, indices)
         end
         if (i > 1 and j > 1 and board[i-1][j-1] == nil) then
             indices = {x = i-1, y = j-1}
             table.insert(moves, indices)
-        elseif (i > 2 and j > 2 and board[i-1][j-1].side == "white" and board[i-2][j-2] == nil) then
             indices = {x = i-2, y = j-2}
             table.insert(moves, indices)
         end
