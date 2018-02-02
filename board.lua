@@ -1,6 +1,9 @@
 Board = {}
 Board.__index = Board
 
+blackScore = 12
+whiteScore = 12
+
 function Board:new(topLeftX, topLeftY, scale)
     require("piece")
     local board = {}
@@ -23,6 +26,9 @@ function Board:new(topLeftX, topLeftY, scale)
             end
         end
     end
+
+    -- position = {x = topLeftX + scale * (2), y = topLeftY + scale * 1}
+    -- board[3][2] = Piece:new("black", position)
     
     setmetatable(board, self)
     return board
@@ -77,101 +83,132 @@ end
 
 function Board:getValidMoves(piece) 
     local moves = {}
+    local jumpmoves = {}
     local side = piece.side
     local i, j = positionToIndex(piece.x, piece.y)
+    local jumped = false
+
     if (side == "white" and not piece.isKing) then
-        print("white not king", i, j)
-        if (i < 8 and j > 1 and board[i+1][j-1] == nil) then
-            indices = {x = i+1, y = j-1}
-            table.insert(moves, indices)
-        elseif (i < 7 and j > 2 and board[i+1][j-1].side == "black" and board[i+2][j-2] == nil) then
-            indices = {x = i+2, y = j-2}
-            table.insert(moves, indices)
+        if (i < 7 and j > 2 and board[i+1][j-1] ~= nil and board[i+1][j-1].side == "black" and board[i+2][j-2] == nil) then
+            indices = {x = i+2, y = j-2, jmp = {true, i+1, j-1}}
+            table.insert(jumpmoves, indices)
+            jumped = true
         end
-        if (i > 1 and j > 1 and board[i-1][j-1] == nil) then
-            indices = {x = i-1, y = j-1}
-            table.insert(moves, indices)
-        elseif (i > 2 and j > 2 and board[i-1][j-1].side == "black" and board[i-2][j-2] == nil) then
-            indices = {x = i-2, y = j-2}
-            table.insert(moves, indices)
+        if (i > 2 and j > 2 and board[i-1][j-1] ~= nil and board[i-1][j-1].side == "black" and board[i-2][j-2] == nil) then
+            indices = {x = i-2, y = j-2, jmp = {true, i-1, j-1}}
+            table.insert(jumpmoves, indices)
+            jumped = true
         end
-        print(#moves)
-        -- print(moves[1].x, moves[1].y)
+        if (not jumped) then
+            if (i < 8 and j > 1 and board[i+1][j-1] == nil) then
+                indices = {x = i+1, y = j-1, jmp = {false}}
+                table.insert(moves, indices)
+            end
+            if (i > 1 and j > 1 and board[i-1][j-1] == nil) then
+                indices = {x = i-1, y = j-1, jmp = {false}}
+                table.insert(moves, indices)
+            end
+        end
     elseif (side == "white" and piece.isKing) then
-        print("white is king", i, j)
-        if (i < 8 and j > 1 and board[i+1][j-1] == nil) then
-            indices = {x = i+1, y = j-1}
-            table.insert(moves, indices)
-        elseif (i < 7 and j > 2 and board[i+1][j-1].side == "black" and board[i+2][j-2] == nil) then
-            indices = {x = i+2, y = j-2}
-            table.insert(moves, indices)
+        if (i < 7 and j > 2 and board[i+1][j-1] ~= nil and board[i+1][j-1].side == "black" and board[i+2][j-2] == nil) then
+            indices = {x = i+2, y = j-2, jmp =  {true, i+1, j-1}}
+            table.insert(jumpmoves, indices)
+            jumped = true
         end
-        if (i > 1 and j > 1 and board[i-1][j-1] == nil) then
-            indices = {x = i-1, y = j-1}
-            table.insert(moves, indices)
-        elseif (i > 2 and j > 2 and board[i-1][j-1].side == "black" and board[i-2][j-2] == nil) then
-            indices = {x = i-2, y = j-2}
-            table.insert(moves, indices)
+        if (i > 2 and j > 2 and board[i-1][j-1] ~= nil and board[i-1][j-1].side == "black" and board[i-2][j-2] == nil) then
+            indices = {x = i-2, y = j-2, jmp = {true, i-1, j-1}}
+            table.insert(jumpmoves, indices)
+            jumped = true
         end
-        if (i < 8 and j < 8 and board[i+1][j+1] == nil) then
-            indices = {x = i+1, y = j-1}
-            table.insert(moves, indices)
-        elseif (i < 7 and j < 7 and board[i+2][j+2] == nil) then
-            indices = {x = i+2, y = j+2}
-            table.insert(moves, indices)
+        if (i < 7 and j < 7 and board[i+1][j+1] ~= nil and board[i+1][j+1].side == "black" and board[i+2][j+2] == nil) then
+            indices = {x = i+2, y = j+2, jmp = {true, i+1, j+1}}
+            table.insert(jumpmoves, indices)
+            jumped = true
         end
-        if (i > 1 and j < 8 and board[i-1][j+1] == nil) then
-            indices = {x = i-1, y = j-1}
-            table.insert(moves, indices)
-        elseif (i > 2 and j < 7 and board[i-2][j+2] == nil) then
-            indices = {x = i-2, y = j+2}
-            table.insert(moves, indices)
+        if (i > 2 and j < 7 and board[i-1][j+1] ~= nil and board[i-1][j+1].side == "black" and board[i-2][j+2] == nil) then
+            indices = {x = i-2, y = j+2, jmp = {true, i-1, j+1}}
+            table.insert(jumpmoves, indices)
         end
-        print(#moves)
+        if (not jumped) then
+            print(i, j)
+            if (i < 8 and j > 1 and board[i+1][j-1] == nil) then
+                indices = {x = i+1, y = j-1, jmp = {false}}
+                table.insert(moves, indices)
+            end
+            if (i > 1 and j > 1 and board[i-1][j-1] == nil) then
+                indices = {x = i-1, y = j-1, jmp = {false}}
+                table.insert(moves, indices)
+            end
+            if (i < 8 and j < 8 and board[i+1][j+1] == nil) then
+                indices = {x = i+1, y = j+1, jmp = {false}}
+                table.insert(moves, indices)
+            end
+            if (i > 1 and j < 8 and board[i-1][j+1] == nil) then
+                indices = {x = i-1, y = j+1, jmp = {false}}
+                table.insert(moves, indices)
+            end
+        end
     end
     if (side == "black" and not piece.isKing) then
-        print("black not king", i, j)
-        if (i < 8 and j < 8 and board[i+1][j+1] == nil) then
-            indices = {x = i+1, y = j-1}
-            table.insert(moves, indices)
+        if (i < 7 and j < 7 and board[i+1][j+1] ~= nil and board[i+1][j+1].side == "white" and board[i+2][j+2] == nil) then
+            indices = {x = i+2, y = j+2, jmp = {true, i+1, j+1}}
+            table.insert(jumpmoves, indices)
+            jumped = true
         end
-        if (i > 1 and j < 8 and board[i-1][j+1] == nil) then
-            indices = {x = i-1, y = j-1}
-            table.insert(moves, indices)
+        if (i > 2 and j < 7 and board[i-1][j+1] ~= nil and board[i-1][j+1].side == "white" and board[i-2][j+2] == nil) then
+            indices = {x = i-2, y = j+2, jmp = {true, i-1, j+1}}
+            table.insert(jumpmoves, indices)
         end
-        print(#moves)
-        -- print(moves[1].x, moves[1].y)
+        if (not jumped) then
+            if (i < 8 and j < 8 and board[i+1][j+1] == nil) then
+                indices = {x = i+1, y = j+1, jmp = {false}}
+                table.insert(moves, indices)
+            end
+            if (i > 1 and j < 8 and board[i-1][j+1] == nil) then
+                indices = {x = i-1, y = j+1, jmp = {false}}
+                table.insert(moves, indices)
+            end
+        end
     elseif (side == "black" and piece.isKing) then
-        print("black is king", i, j)
-        if (i < 8 and j > 1 and board[i+1][j-1] == nil) then
-            indices = {x = i+1, y = j-1}
-            table.insert(moves, indices)
-            indices = {x = i+2, y = j-2}
-            table.insert(moves, indices)
+        if (i < 7 and j > 2 and board[i+1][j-1] ~= nil and board[i+1][j-1].side == "white" and board[i+2][j-2] == nil) then
+            indices = {x = i+2, y = j-2, jmp = {true, i+1, j-1}}
+            table.insert(jumpmoves, indices)
+            jumped = true
         end
-        if (i > 1 and j > 1 and board[i-1][j-1] == nil) then
-            indices = {x = i-1, y = j-1}
-            table.insert(moves, indices)
-            indices = {x = i-2, y = j-2}
-            table.insert(moves, indices)
+        if (i > 2 and j > 2 and board[i-1][j-1] ~= nil and board[i-1][j-1].side == "white" and board[i-2][j-2] == nil) then
+            indices = {x = i-2, y = j-2, jmp = {true, i-1, j-1}}
+            table.insert(jumpmoves, indices)
+            jumped = true
         end
-        if (i < 8 and j < 8 and board[i+1][j+1] == nil) then
-            indices = {x = i+1, y = j-1}
-            table.insert(moves, indices)
-        elseif (i < 7 and j < 7 and board[i+2][j+2] == nil) then
-            indices = {x = i+2, y = j+2}
-            table.insert(moves, indices)
+        if (i < 7 and j < 7 and board[i+1][j+1] ~= nil and board[i+1][j+1].side == "white" and board[i+2][j+2] == nil) then
+            indices = {x = i+2, y = j+2, jmp = {true, i+1, j+1}}
+            table.insert(jumpmoves, indices)
+            jumped = true
         end
-        if (i > 1 and j < 8 and board[i-1][j+1] == nil) then
-            indices = {x = i-1, y = j-1}
-            table.insert(moves, indices)
-        elseif (i > 2 and j < 7 and board[i-2][j+2] == nil) then
-            indices = {x = i-2, y = j+2}
-            table.insert(moves, indices)
+        if (i > 2 and j < 7 and board[i-1][j+1] ~= nil and board[i-1][j+1].side == "white" and board[i-2][j+2] == nil) then
+            indices = {x = i-2, y = j+2, jmp = {true, i-1, j+1}}
+            table.insert(jumpmoves, indices)
         end
-        print(#moves)
+        if (not jumped) then
+            if (i < 8 and j > 1 and board[i+1][j-1] == nil) then
+                indices = {x = i+1, y = j-1, jmp = {false}}
+                table.insert(moves, indices)
+            end
+            if (i > 1 and j > 1 and board[i-1][j-1] == nil) then
+                indices = {x = i-1, y = j-1, jmp = {false}}
+                table.insert(moves, indices)
+            end
+            if (i < 8 and j < 8 and board[i+1][j+1] == nil) then
+                indices = {x = i+1, y = j+1, jmp = {false}}
+                table.insert(moves, indices)
+            end
+            if (i > 1 and j < 8 and board[i-1][j+1] == nil) then
+                indices = {x = i-1, y = j+1, jmp = {false}}
+                table.insert(moves, indices)
+            end
+        end
     end
-    return moves
+    return moves, jumpmoves
 end
 
 local function move(event)
@@ -181,10 +218,9 @@ local function move(event)
         display.getCurrentStage():setFocus( event.target, event.id )
         saveX = p.x
         saveY = p.y
-        moves = Board:getValidMoves(p)
+        moves, jumpmoves = Board:getValidMoves(p)
     elseif (event.phase == "moved" and isDraggedAllowed) then
         haveDragged = true
-        print(p.x,' ', p.y)
         p:toFront()
         setPosition(p, event.x, event.y)
         width = display.contentWidth
@@ -205,8 +241,24 @@ local function move(event)
             saveX = 0; saveY = 0
         end
         local x, y = positionToCell(p.x, p.y, saveX, saveY)
-        if Board:checkIfValidMove(x, y, saveX, saveY, moves) then
-            Board:updateBoard(p, x, y, saveX, saveY)
+        local valid, jumped = Board:checkIfValidMove(x, y, saveX, saveY, moves, jumpmoves)
+        
+        if valid then
+            if (jumped) then
+                moves, jumpmoves = Board:getValidMoves(p)
+                if (#jumpmoves > 0) then
+                    turn = p.side
+                    Board:nextTurn(turn)
+                end
+            end
+             
+            if (p.side == "white") then
+                turn = "black"
+            else
+                turn = "white"
+            end
+
+            Board:updateBoard(p, x, y, saveX, saveY, jumped, turn)
             Board:nextTurn(turn)
         else
             local sx, sy = positionToCell(saveX, saveY)
@@ -219,11 +271,43 @@ local function move(event)
     return true
 end
 
-function Board:checkIfValidMove(x, y, sx, sy, moves)
-    return Board:checkNewPositionMoved(x, y, sx, sy) and checkDarkCell(x, y) and #moves > 0
+function Board:usedValidMove(moves, jumpmoves, x, y)
+    print("moves: "..#moves)
+    valid = false
+
+    if #moves < 1  and #jumpmoves < 1 then
+        valid = false
+        return valid, false
+    end
+
+    local i, j = positionToIndex(x,y)
+    print("i:", i, "j:", j)
+
+    if (#jumpmoves > 0) then
+        for m = 1, #jumpmoves do
+            print("moves: ".. jumpmoves[m].x .. ", " .. jumpmoves[m].y)
+            if (i == jumpmoves[m].x and j == jumpmoves[m].y) then
+                valid = true
+            end
+        end
+        return valid, jumpmoves[1].jmp
+    else
+        for k = 1, #moves do
+            print("moves: ".. moves[k].x .. ", " .. moves[k].y)
+            if (i == moves[k].x and j == moves[k].y) then
+                valid = true
+            end
+        end
+        return valid, moves[1].jmp
+    end
 end
 
-function Board:updateBoard(piece, x, y, sx, sy)
+function Board:checkIfValidMove(x, y, sx, sy, moves)
+    valid, jumped = Board:usedValidMove(moves, jumpmoves, x, y)
+    return Board:checkNewPositionMoved(x, y, sx, sy) and checkDarkCell(x, y) and valid, jumped
+end
+
+function Board:updateBoard(piece, x, y, sx, sy, jump, turn)
     print("board updated")
     i, j = positionToIndex(x, y)
     oldI, oldJ = positionToIndex(sx, sy)
@@ -247,8 +331,21 @@ function Board:updateBoard(piece, x, y, sx, sy)
         piece.side = "black"
         piece.isKing = true
     end
-
-    print(i,j,board[i][j].side, board[i][j].isKing)
+    if (jump[1] == true) then
+        print("jump")
+        board[jump[2]][jump[3]]:removeSelf()
+        board[jump[2]][jump[3]] = nil
+        if (turn == "black") then
+            whiteScore = whiteScore - 1
+        else
+            blackScore = blackScore - 1
+        end
+    end
+    if (blackScore == 0) then
+        print("black wins")
+    elseif (whiteScore == 0) then
+        print("white wins")
+    end
 end
 
 function Board:nextTurn(side)
@@ -261,11 +358,5 @@ function Board:nextTurn(side)
                 board[i][j]:addEventListener("touch", move)
             end
         end
-    end
-
-    if (turn == "white") then
-        turn = "black"
-    else
-        turn = "white"
     end
 end
