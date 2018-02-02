@@ -97,6 +97,37 @@ function Board:getValidMoves(piece)
         end
         print(#moves)
         -- print(moves[1].x, moves[1].y)
+    elseif (side == "white" and piece.isKing) then
+        print("white is king", i, j)
+        if (i < 8 and j > 1 and board[i+1][j-1] == nil) then
+            indices = {x = i+1, y = j-1}
+            table.insert(moves, indices)
+        elseif (i < 7 and j > 2 and board[i+1][j-1].side == "black" and board[i+2][j-2] == nil) then
+            indices = {x = i+2, y = j-2}
+            table.insert(moves, indices)
+        end
+        if (i > 1 and j > 1 and board[i-1][j-1] == nil) then
+            indices = {x = i-1, y = j-1}
+            table.insert(moves, indices)
+        elseif (i > 2 and j > 2 and board[i-1][j-1].side == "black" and board[i-2][j-2] == nil) then
+            indices = {x = i-2, y = j-2}
+            table.insert(moves, indices)
+        end
+        if (i < 8 and j < 8 and board[i+1][j+1] == nil) then
+            indices = {x = i+1, y = j-1}
+            table.insert(moves, indices)
+        elseif (i < 7 and j < 7 and board[i+2][j+2] == nil) then
+            indices = {x = i+2, y = j+2}
+            table.insert(moves, indices)
+        end
+        if (i > 1 and j < 8 and board[i-1][j+1] == nil) then
+            indices = {x = i-1, y = j-1}
+            table.insert(moves, indices)
+        elseif (i > 2 and j < 7 and board[i-2][j+2] == nil) then
+            indices = {x = i-2, y = j+2}
+            table.insert(moves, indices)
+        end
+        print(#moves)
     end
     if (side == "black" and not piece.isKing) then
         print("black not king", i, j)
@@ -110,6 +141,37 @@ function Board:getValidMoves(piece)
         end
         print(#moves)
         -- print(moves[1].x, moves[1].y)
+    elseif (side == "black" and piece.isKing) then
+        print("black is king", i, j)
+        if (i < 8 and j > 1 and board[i+1][j-1] == nil) then
+            indices = {x = i+1, y = j-1}
+            table.insert(moves, indices)
+        elseif (i < 7 and j > 2 and board[i+1][j-1].side == "white" and board[i+2][j-2] == nil) then
+            indices = {x = i+2, y = j-2}
+            table.insert(moves, indices)
+        end
+        if (i > 1 and j > 1 and board[i-1][j-1] == nil) then
+            indices = {x = i-1, y = j-1}
+            table.insert(moves, indices)
+        elseif (i > 2 and j > 2 and board[i-1][j-1].side == "white" and board[i-2][j-2] == nil) then
+            indices = {x = i-2, y = j-2}
+            table.insert(moves, indices)
+        end
+        if (i < 8 and j < 8 and board[i+1][j+1] == nil) then
+            indices = {x = i+1, y = j-1}
+            table.insert(moves, indices)
+        elseif (i < 7 and j < 7 and board[i+2][j+2] == nil) then
+            indices = {x = i+2, y = j+2}
+            table.insert(moves, indices)
+        end
+        if (i > 1 and j < 8 and board[i-1][j+1] == nil) then
+            indices = {x = i-1, y = j-1}
+            table.insert(moves, indices)
+        elseif (i > 2 and j < 7 and board[i-2][j+2] == nil) then
+            indices = {x = i-2, y = j+2}
+            table.insert(moves, indices)
+        end
+        print(#moves)
     end
     return moves
 end
@@ -127,23 +189,24 @@ local function move(event)
         print(p.x,' ', p.y)
         p:toFront()
         setPosition(p, event.x, event.y)
-        if (p.x > display.contentWidth) then
-            p.x = display.contentWidth
+        width = display.contentWidth
+        height = display.contentHeight
+        if (p.x > width - 1) then
+            p.x = width - 1
         end
-        if (p.x < 0) then
-            p.x = 0
+        if (p.x < 1) then
+            p.x = 1
         end
-        if (p.y > display.contentHeight) then
-            p.y = display.contentHeight
-        end
-        if (p.y < 0) then
-            p.y = 0
+        if (p.y > height - width/2 + 139) then
+            p.y = height - width/2 + 139        end
+        if (p.y < 0 + width/2 - 179) then
+            p.y = 0 + width/2 - 179
         end
     elseif (event.phase == "ended" and haveDragged) then
         if (saveX == nil and saveY == nil) then
             saveX = 0; saveY = 0
         end
-        local x, y = positionToCell(event.x, event.y, saveX, saveY)
+        local x, y = positionToCell(p.x, p.y, saveX, saveY)
         if Board:checkIfValidMove(x, y, saveX, saveY, moves) then
             Board:updateBoard(p, x, y, saveX, saveY)
             Board:nextTurn(turn)
