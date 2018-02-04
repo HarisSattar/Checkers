@@ -26,9 +26,6 @@ function Board:new(topLeftX, topLeftY, scale)
             end
         end
     end
-
-    -- position = {x = topLeftX + scale * (2), y = topLeftY + scale * 1}
-    -- board[3][2] = Piece:new("black", position)
     
     setmetatable(board, self)
     return board
@@ -101,11 +98,11 @@ function Board:getValidMoves(piece)
         end
         if (not jumped) then
             if (i < 8 and j > 1 and board[i+1][j-1] == nil) then
-                indices = {x = i+1, y = j-1, jmp = {false}}
+                indices = {x = i+1, y = j-1, jmp = {false, i, j}}
                 table.insert(moves, indices)
             end
             if (i > 1 and j > 1 and board[i-1][j-1] == nil) then
-                indices = {x = i-1, y = j-1, jmp = {false}}
+                indices = {x = i-1, y = j-1, jmp = {false, i, j}}
                 table.insert(moves, indices)
             end
         end
@@ -132,19 +129,19 @@ function Board:getValidMoves(piece)
         if (not jumped) then
             print(i, j)
             if (i < 8 and j > 1 and board[i+1][j-1] == nil) then
-                indices = {x = i+1, y = j-1, jmp = {false}}
+                indices = {x = i+1, y = j-1, jmp = {false, i, j}}
                 table.insert(moves, indices)
             end
             if (i > 1 and j > 1 and board[i-1][j-1] == nil) then
-                indices = {x = i-1, y = j-1, jmp = {false}}
+                indices = {x = i-1, y = j-1, jmp = {false, i, j}}
                 table.insert(moves, indices)
             end
             if (i < 8 and j < 8 and board[i+1][j+1] == nil) then
-                indices = {x = i+1, y = j+1, jmp = {false}}
+                indices = {x = i+1, y = j+1, jmp = {false, i, j}}
                 table.insert(moves, indices)
             end
             if (i > 1 and j < 8 and board[i-1][j+1] == nil) then
-                indices = {x = i-1, y = j+1, jmp = {false}}
+                indices = {x = i-1, y = j+1, jmp = {false, i, j}}
                 table.insert(moves, indices)
             end
         end
@@ -161,11 +158,11 @@ function Board:getValidMoves(piece)
         end
         if (not jumped) then
             if (i < 8 and j < 8 and board[i+1][j+1] == nil) then
-                indices = {x = i+1, y = j+1, jmp = {false}}
+                indices = {x = i+1, y = j+1, jmp = {false, i, j}}
                 table.insert(moves, indices)
             end
             if (i > 1 and j < 8 and board[i-1][j+1] == nil) then
-                indices = {x = i-1, y = j+1, jmp = {false}}
+                indices = {x = i-1, y = j+1, jmp = {false, i, j}}
                 table.insert(moves, indices)
             end
         end
@@ -191,19 +188,19 @@ function Board:getValidMoves(piece)
         end
         if (not jumped) then
             if (i < 8 and j > 1 and board[i+1][j-1] == nil) then
-                indices = {x = i+1, y = j-1, jmp = {false}}
+                indices = {x = i+1, y = j-1, jmp = {false, i, j}}
                 table.insert(moves, indices)
             end
             if (i > 1 and j > 1 and board[i-1][j-1] == nil) then
-                indices = {x = i-1, y = j-1, jmp = {false}}
+                indices = {x = i-1, y = j-1, jmp = {false, i, j}}
                 table.insert(moves, indices)
             end
             if (i < 8 and j < 8 and board[i+1][j+1] == nil) then
-                indices = {x = i+1, y = j+1, jmp = {false}}
+                indices = {x = i+1, y = j+1, jmp = {false, i, j}}
                 table.insert(moves, indices)
             end
             if (i > 1 and j < 8 and board[i-1][j+1] == nil) then
-                indices = {x = i-1, y = j+1, jmp = {false}}
+                indices = {x = i-1, y = j+1, jmp = {false, i, j}}
                 table.insert(moves, indices)
             end
         end
@@ -242,22 +239,25 @@ local function move(event)
         end
         local x, y = positionToCell(p.x, p.y, saveX, saveY)
         local valid, jumped = Board:checkIfValidMove(x, y, saveX, saveY, moves, jumpmoves)
-        
         if valid then
-            if (jumped) then
+            if (jumped[1]) then
                 moves, jumpmoves = Board:getValidMoves(p)
                 if (#jumpmoves > 0) then
                     turn = p.side
-                    Board:nextTurn(turn)
+                    Board:updateBoard(p, x, y, saveX, saveY, jumped, turn)
+                    isDraggedAllowed = false
+                    haveDragged = false
+                    return true
+                else
+                    Board:updateBoard(p, x, y, saveX, saveY, jumped, turn)
+                    Board:nextTurn(getNextTurn(p))
+                    isDraggedAllowed = false
+                    haveDragged = false
+                    display.getCurrentStage():setFocus(event.target, nil)
+                    return true
                 end
             end
-             
-            if (p.side == "white") then
-                turn = "black"
-            else
-                turn = "white"
-            end
-
+            turn = getNextTurn(p)
             Board:updateBoard(p, x, y, saveX, saveY, jumped, turn)
             Board:nextTurn(turn)
         else
@@ -270,6 +270,16 @@ local function move(event)
     end
     return true
 end
+
+function getNextTurn(p) 
+    if (p.side == "white") then
+        turn = "black"
+    else
+        turn = "white"
+    end
+    return turn
+end
+
 
 function Board:usedValidMove(moves, jumpmoves, x, y)
     print("moves: "..#moves)
