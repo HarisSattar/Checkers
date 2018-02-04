@@ -352,10 +352,26 @@ function Board:updateBoard(piece, x, y, sx, sy, jump, turn)
         end
     end
     if (blackScore == 0) then
-        print("black wins")
-    elseif (whiteScore == 0) then
         print("white wins")
+        displayWinner("White")
+    elseif (whiteScore == 0) then
+        print("black wins")
+        displayWinner("Black")
     end
+end
+
+function displayWinner(side)
+    options = {
+        text = side .. " Wins!",
+        x = width/2,
+        y = height/2,
+        font = native.systemFont,
+        fontSize = 200
+    }
+    rect = display.newRect(width/2, height/2, width, height)
+    paint = {0, 0, 0, 0.7}
+    rect.fill = paint
+    display.newText(options)
 end
 
 function Board:nextTurn(side)
